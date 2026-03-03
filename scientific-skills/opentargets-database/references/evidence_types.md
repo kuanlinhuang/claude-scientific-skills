@@ -4,7 +4,7 @@
 
 Evidence represents any event or set of events that identifies a target as a potential causal gene or protein for a disease. Evidence is standardized and mapped to:
 - **Ensembl gene IDs** for targets
-- **EFO (Experimental Factor Ontology)** for diseases/phenotypes
+- **Mondo Disease Ontology IDs** for diseases/phenotypes (EFO IDs also accepted)
 
 Evidence is organized into **data types** (broader categories) and **data sources** (specific databases/studies).
 

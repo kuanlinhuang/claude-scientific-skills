@@ -149,7 +149,7 @@ GET /singleNucleotidePolymorphisms/{rsId}/associations
 import requests
 
 # Find all associations for type 2 diabetes
-trait_id = "EFO_0001360"
+trait_id = "MONDO_0005148"  # EFO_0001360 also accepted
 url = f"https://www.ebi.ac.uk/gwas/rest/api/efoTraits/{trait_id}/associations"
 params = {"size": 100, "page": 0}
 response = requests.get(url, params=params, headers={"Content-Type": "application/json"})
@@ -232,7 +232,7 @@ GET /efoTraits/search/findByTraitIgnoreCase?trait={traitName}
 import requests
 
 # Get trait details
-trait_id = "EFO_0001360"
+trait_id = "MONDO_0005148"  # EFO_0001360 also accepted
 url = f"https://www.ebi.ac.uk/gwas/rest/api/efoTraits/{trait_id}"
 response = requests.get(url, headers={"Content-Type": "application/json"})
 trait = response.json()
@@ -355,7 +355,7 @@ GET /traits/{efoId}/associations
 import requests
 
 # Find highly significant associations for a trait
-trait_id = "EFO_0001360"
+trait_id = "MONDO_0005148"  # EFO_0001360 also accepted
 base_url = "https://www.ebi.ac.uk/gwas/summary-statistics/api"
 url = f"{base_url}/traits/{trait_id}/associations"
 params = {
@@ -458,10 +458,10 @@ Responses follow the HAL (Hypertext Application Language) specification:
   },
   "_links": {
     "self": {
-      "href": "https://www.ebi.ac.uk/gwas/rest/api/efoTraits/EFO_0001360/associations?page=0"
+      "href": "https://www.ebi.ac.uk/gwas/rest/api/efoTraits/MONDO_0005148/associations?page=0"
     },
     "next": {
-      "href": "https://www.ebi.ac.uk/gwas/rest/api/efoTraits/EFO_0001360/associations?page=1"
+      "href": "https://www.ebi.ac.uk/gwas/rest/api/efoTraits/MONDO_0005148/associations?page=1"
     }
   },
   "page": {
@@ -731,7 +731,7 @@ class GWASCatalogQuery:
 gwas = GWASCatalogQuery()
 
 # Query type 2 diabetes associations
-df = gwas.get_trait_associations('EFO_0001360')
+df = gwas.get_trait_associations('MONDO_0005148')  # EFO_0001360 also accepted
 print(f"Found {len(df)} genome-wide significant associations")
 print(f"Unique variants: {df['rs_id'].nunique()}")
 

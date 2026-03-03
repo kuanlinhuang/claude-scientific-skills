@@ -152,12 +152,13 @@ def get_target_info(ensembl_id: str, include_diseases: bool = False) -> Dict[str
     return result.get("target", {})
 
 
-def get_disease_info(efo_id: str, include_targets: bool = False) -> Dict[str, Any]:
+def get_disease_info(disease_id: str, include_targets: bool = False) -> Dict[str, Any]:
     """
     Retrieve information about a disease.
 
     Args:
-        efo_id: EFO disease identifier (e.g., "EFO_0000249")
+        disease_id: Mondo or EFO disease identifier (e.g., "MONDO_0004975" for Alzheimer disease).
+                    Mondo IDs are preferred; EFO IDs (e.g., "EFO_0000249") are also accepted.
         include_targets: Whether to include top associated targets
 
     Returns:
@@ -182,7 +183,7 @@ def get_disease_info(efo_id: str, include_targets: bool = False) -> Dict[str, An
 
     query = f"""
       query diseaseInfo($efoId: String!) {{
-        disease(efoId: $efoId) {{
+        disease(efoId: $efoId) {{  # efoId is the GraphQL parameter name; accepts Mondo and EFO IDs
           id
           name
           description
@@ -198,18 +199,19 @@ def get_disease_info(efo_id: str, include_targets: bool = False) -> Dict[str, An
       }}
     """
 
-    result = execute_query(query, {"efoId": efo_id})
+    result = execute_query(query, {"efoId": disease_id})
     return result.get("disease", {})
 
 
-def get_target_disease_evidence(ensembl_id: str, efo_id: str,
+def get_target_disease_evidence(ensembl_id: str, disease_id: str,
                                   datasource_ids: Optional[List[str]] = None) -> List[Dict[str, Any]]:
     """
     Retrieve evidence linking a target to a disease.
 
     Args:
         ensembl_id: Ensembl gene ID
-        efo_id: MONDO disease identifier (e.g., "MONDO_0004975")
+        disease_id: Mondo or EFO disease identifier (e.g., "MONDO_0004975" for Alzheimer disease).
+                    Mondo IDs are preferred; EFO IDs are also accepted.
         datasource_ids: Optional filter by data source IDs (e.g., ["gwas_catalog", "clinvar", "chembl"])
                         Note: to filter by evidence category (datatypeId), filter the returned rows
                         by their 'datatypeId' field (e.g., "genetic_association", "known_drug").
@@ -235,7 +237,7 @@ def get_target_disease_evidence(ensembl_id: str, efo_id: str,
       }
     """
 
-    variables = {"ensemblId": ensembl_id, "efoId": efo_id}
+    variables = {"ensemblId": ensembl_id, "efoId": disease_id}
     if datasource_ids:
         variables["datasourceIds"] = datasource_ids
     else:
@@ -245,12 +247,13 @@ def get_target_disease_evidence(ensembl_id: str, efo_id: str,
     return result.get("disease", {}).get("evidences", {}).get("rows", [])
 
 
-def get_known_drugs_for_disease(efo_id: str) -> Dict[str, Any]:
+def get_known_drugs_for_disease(disease_id: str) -> Dict[str, Any]:
     """
     Get drugs known to be used for a disease.
 
     Args:
-        efo_id: EFO disease identifier
+        disease_id: Mondo or EFO disease identifier (e.g., "MONDO_0004975" for Alzheimer disease).
+                    Mondo IDs are preferred; EFO IDs are also accepted.
 
     Returns:
         Dictionary with drug information including phase, targets, and status
@@ -281,7 +284,7 @@ def get_known_drugs_for_disease(efo_id: str) -> Dict[str, Any]:
       }
     """
 
-    result = execute_query(query, {"efoId": efo_id})
+    result = execute_query(query, {"efoId": disease_id})
     return result.get("disease", {}).get("knownDrugs", {})
 
 
@@ -398,11 +401,11 @@ if __name__ == "__main__":
     print("\n\nSearching for Alzheimer's disease...")
     disease_results = search_entities("alzheimer", entity_types=["disease"])
     if disease_results:
-        efo_id = disease_results[0]['id']
-        print(f"  Found: {disease_results[0]['name']} ({efo_id})")
+        disease_id = disease_results[0]['id']  # Returns Mondo ID (e.g., MONDO_0004975)
+        print(f"  Found: {disease_results[0]['name']} ({disease_id})")
 
         # Get known drugs
         print(f"\n  Known drugs for {disease_results[0]['name']}:")
-        drugs = get_known_drugs_for_disease(efo_id)
+        drugs = get_known_drugs_for_disease(disease_id)
         for drug in drugs.get('rows', [])[:5]:
             print(f"    - {drug['drug']['name']} (Phase {drug['phase']})")

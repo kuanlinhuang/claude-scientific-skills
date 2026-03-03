@@ -57,7 +57,7 @@ def gtex_get(endpoint, params=None):
 import requests
 import pandas as pd
 
-def get_gene_expression_by_tissue(gene_id_or_symbol, dataset_id="gtex_v10"):
+def get_gene_expression_by_tissue(gene_id_or_symbol, dataset_id="gtex_v8"):
     """Get median gene expression across all tissues."""
     url = "https://gtexportal.org/api/v2/expression/medianGeneExpression"
     params = {
@@ -78,7 +78,7 @@ def get_gene_expression_by_tissue(gene_id_or_symbol, dataset_id="gtex_v10"):
 
 # Example: get expression of APOE across tissues
 df = get_gene_expression_by_tissue("ENSG00000130203.10")  # APOE GENCODE ID
-# Or use gene symbol (some endpoints accept both)
+# Or use gene symbol (Note: GTEx API v2 often requires GENCODE IDs for robustness)
 print(df.head(10))
 # Output: tissue name, median TPM, sorted by highest expression
 ```
@@ -287,12 +287,13 @@ print(results.groupby("geneSymbol")["tissueSiteDetailId"].count().sort_values(as
 
 ## Best Practices
 
-- **Use GENCODE IDs** (e.g., `ENSG00000130203.10`) for gene queries; the `.version` suffix matters for some endpoints
-- **GTEx variant IDs** use the format `chr{chrom}_{pos}_{ref}_{alt}_b38` (GRCh38) — different from rs IDs
-- **Handle pagination**: Large queries (e.g., all eGenes) require iterating through pages
-- **Tissue nomenclature**: Use `tissueSiteDetailId` (e.g., `Whole_Blood`) not display names for API calls
-- **FDR correction**: GTEx uses FDR < 0.05 (q-value) as the significance threshold for eQTLs
-- **Effect alleles**: The `slope` field is the effect of the alternative allele; positive = higher expression with alt allele
+- **Use GENCODE IDs** (e.g., `ENSG00000130203.10`) for gene queries; many `api/v2` endpoints require or strongly prefer these over gene symbols (which can return 422 errors).
+- **GTEx variant IDs** use the format `chr{chrom}_{pos}_{ref}_{alt}_b38` (GRCh38) — different from rs IDs.
+- **Handle pagination**: Large queries (e.g., all eGenes) require iterating through pages.
+- **Tissue nomenclature**: Use `tissueSiteDetailId` (e.g., `Whole_Blood`) not display names for API calls.
+- **FDR correction**: GTEx uses FDR < 0.05 (q-value) as the significance threshold for eQTLs.
+- **Effect alleles**: The `slope` field is the effect of the alternative allele; positive = higher expression with alt allele.
+- **Dataset IDs**: Use `gtex_v8` as the default stable dataset. `gtex_v10` may require specific GENCODE versions or be in a restricted release.
 
 ## Data Downloads (for large-scale analysis)
 

@@ -36,12 +36,12 @@ The GWAS Catalog is organized around four core entities:
 - **Studies**: GWAS publications with metadata (PMID, author, cohort details)
 - **Associations**: SNP-trait associations with statistical evidence (p ≤ 5×10⁻⁸)
 - **Variants**: Genetic markers (SNPs) with genomic coordinates and alleles
-- **Traits**: Phenotypes and diseases (mapped to EFO ontology terms)
+- **Traits**: Phenotypes and diseases (mapped to Mondo ontology terms)
 
 **Key Identifiers:**
 - Study accessions: `GCST` IDs (e.g., GCST001234)
 - Variant IDs: `rs` numbers (e.g., rs7903146) or `variant_id` format
-- Trait IDs: EFO terms (e.g., EFO_0001360 for type 2 diabetes)
+- Trait IDs: Mondo terms (e.g., MONDO_0005148)
 - Gene symbols: HGNC approved names (e.g., TCF7L2)
 
 ### 2. Web Interface Searches
@@ -85,14 +85,16 @@ Returns study details and all reported associations.
 
 ### 3. REST API Access
 
-The GWAS Catalog provides two REST APIs for programmatic access:
+The GWAS Catalog provides programmatic access via REST APIs. Note that the v1 API (/gwas/rest/api) is deprecated for many trait-based queries; use the v2 API or specific trait endpoints.
 
 **Base URLs:**
-- GWAS Catalog API: `https://www.ebi.ac.uk/gwas/rest/api`
+- GWAS Catalog API v2: `https://www.ebi.ac.uk/gwas/api/v2`
+- GWAS Catalog API v1 (Legacy): `https://www.ebi.ac.uk/gwas/rest/api`
 - Summary Statistics API: `https://www.ebi.ac.uk/gwas/summary-statistics/api`
 
 **API Documentation:**
-- Main API docs: https://www.ebi.ac.uk/gwas/rest/docs/api
+- Main API docs (v1): https://www.ebi.ac.uk/gwas/rest/docs/api
+- New API info (v2): https://www.ebi.ac.uk/gwas/docs/api
 - Summary stats docs: https://www.ebi.ac.uk/gwas/summary-statistics/docs/
 
 **Core Endpoints:**
@@ -101,15 +103,15 @@ The GWAS Catalog provides two REST APIs for programmatic access:
    ```python
    import requests
 
-   # Get a specific study
-   url = "https://www.ebi.ac.uk/gwas/rest/api/studies/GCST001795"
+   # Get a specific study (v2 preferred if v1 fails)
+   url = "https://www.ebi.ac.uk/gwas/api/v2/studies/GCST001795"
    response = requests.get(url, headers={"Content-Type": "application/json"})
    study = response.json()
    ```
 
 2. **Associations endpoint** - `/associations`
    ```python
-   # Find associations for a variant
+   # Find associations for a variant (v1 legacy)
    variant = "rs7903146"
    url = f"https://www.ebi.ac.uk/gwas/rest/api/singleNucleotidePolymorphisms/{variant}/associations"
    params = {"projection": "associationBySnp"}
@@ -119,19 +121,23 @@ The GWAS Catalog provides two REST APIs for programmatic access:
 
 3. **Variants endpoint** - `/singleNucleotidePolymorphisms/{rsID}`
    ```python
-   # Get variant details
-   url = "https://www.ebi.ac.uk/gwas/rest/api/singleNucleotidePolymorphisms/rs7903146"
+   # Get variant details (v2 preferred)
+   url = "https://www.ebi.ac.uk/gwas/api/v2/variants/rs7903146"
    response = requests.get(url, headers={"Content-Type": "application/json"})
    variant_info = response.json()
    ```
 
 4. **Traits endpoint** - `/efoTraits/{efoID}`
    ```python
-   # Get trait information
-   url = "https://www.ebi.ac.uk/gwas/rest/api/efoTraits/EFO_0001360"
+   # Get trait information (v2 preferred)
+   # If trait-based studies query fails at /rest/api, use /api/v2
+   url = "https://www.ebi.ac.uk/gwas/api/v2/efoTraits/EFO_0001360"
    response = requests.get(url, headers={"Content-Type": "application/json"})
    trait_info = response.json()
    ```
+
+**Important Note on Trait Queries:**
+Always prefer Mondo IDs if available for traits. If `https://www.ebi.ac.uk/gwas/rest/api/efoTraits/{efoId}/studies` returns 404, the correct modern endpoint is often `https://www.ebi.ac.uk/gwas/api/v2/efoTraits/{efoId}/studies`.
 
 ### 4. Query Examples and Patterns
 
@@ -139,7 +145,7 @@ The GWAS Catalog provides two REST APIs for programmatic access:
 ```python
 import requests
 
-trait = "EFO_0001360"  # Type 2 diabetes
+trait = "MONDO_0005148"  # Type 2 diabetes (EFO_0001360 also accepted)
 base_url = "https://www.ebi.ac.uk/gwas/rest/api"
 
 # Query associations for this trait
@@ -188,7 +194,7 @@ import requests
 base_url = "https://www.ebi.ac.uk/gwas/summary-statistics/api"
 
 # Find associations by trait with p-value threshold
-trait = "EFO_0001360"  # Type 2 diabetes
+trait = "MONDO_0005148"  # Type 2 diabetes (EFO_0001360 also accepted)
 p_upper = "0.000000001"  # p < 1e-9
 url = f"{base_url}/traits/{trait}/associations"
 params = {
@@ -273,7 +279,7 @@ The GWAS Catalog provides links to external resources:
 - UCSC Genome Browser: Genomic context
 
 **Phenotype Resources:**
-- EFO (Experimental Factor Ontology): Standardized trait terms
+- MONDO
 - OMIM: Disease gene relationships
 - Disease Ontology: Disease hierarchies
 
@@ -294,13 +300,13 @@ associations_response = requests.get(associations_url)
 
 ### Workflow 1: Exploring Genetic Associations for a Disease
 
-1. **Identify the trait** using EFO terms or free text:
+1. **Identify the trait** using Mondo terms or free text:
    - Search web interface for disease name
-   - Note the EFO ID (e.g., EFO_0001360 for type 2 diabetes)
+   - Note the Mondo ID (e.g., MONDO_0005148 for type 2 diabetes); EFO IDs (e.g., EFO_0001360) are also accepted by the API
 
 2. **Query associations via API:**
    ```python
-   url = f"https://www.ebi.ac.uk/gwas/rest/api/efoTraits/{efo_id}/associations"
+   url = f"https://www.ebi.ac.uk/gwas/rest/api/efoTraits/{trait_id}/associations"
    ```
 
 3. **Filter by significance and population:**
@@ -450,7 +456,7 @@ Results are paginated (default 20 items per page). Navigate using:
 ## Best Practices
 
 ### Query Strategy
-- Start with web interface to identify relevant EFO terms and study accessions
+- Start with web interface to identify relevant Mondo terms (or EFO terms) and study accessions
 - Use API for bulk data extraction and automated analyses
 - Implement pagination handling for large result sets
 - Cache API responses to minimize redundant requests
@@ -490,7 +496,8 @@ def query_gwas_catalog(trait_id, p_threshold=5e-8):
     Query GWAS Catalog for trait associations
 
     Args:
-        trait_id: EFO trait identifier (e.g., 'EFO_0001360')
+        trait_id: Mondo or EFO trait identifier (e.g., 'MONDO_0005148' for type 2 diabetes).
+                  Mondo IDs are preferred; EFO IDs (e.g., 'EFO_0001360') are also accepted.
         p_threshold: P-value threshold for filtering
 
     Returns:
@@ -534,7 +541,7 @@ def query_gwas_catalog(trait_id, p_threshold=5e-8):
     return pd.DataFrame(results)
 
 # Example usage
-df = query_gwas_catalog('EFO_0001360')  # Type 2 diabetes
+df = query_gwas_catalog('MONDO_0005148')  # Type 2 diabetes (EFO_0001360 also accepted)
 print(df.head())
 print(f"\nTotal associations: {len(df)}")
 print(f"Unique variants: {df['variant'].nunique()}")
@@ -572,7 +579,7 @@ The GWAS Catalog team provides workshop materials:
 - The GWAS Catalog is updated regularly with new publications
 - Re-run queries periodically for comprehensive coverage
 - Summary statistics are added as studies release data
-- EFO mappings may be updated over time
+- Trait ontology mappings (Mondo/EFO) may be updated over time
 
 ### Citation Requirements
 When using GWAS Catalog data, cite:

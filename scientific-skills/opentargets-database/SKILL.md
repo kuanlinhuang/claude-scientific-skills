@@ -55,7 +55,7 @@ results = search_entities("BRCA1", entity_types=["target"])
 ```python
 # Search by disease name
 results = search_entities("alzheimer", entity_types=["disease"])
-# Returns: [{"id": "EFO_0000249", "name": "Alzheimer disease", ...}]
+# Returns: [{"id": "MONDO_0004975", "name": "Alzheimer disease", ...}]
 ```
 
 **For drugs:**
@@ -67,7 +67,7 @@ results = search_entities("aspirin", entity_types=["drug"])
 
 **Identifiers used:**
 - Targets: Ensembl gene IDs (e.g., `ENSG00000157764`)
-- Diseases: EFO (Experimental Factor Ontology) IDs (e.g., `EFO_0000249`)
+- Diseases: Mondo Disease Ontology IDs (e.g., `MONDO_0004975`); EFO IDs (e.g., `EFO_0000249`) are also accepted but Mondo is preferred
 - Drugs: ChEMBL IDs (e.g., `CHEMBL25`)
 
 ### 2. Query Target Information
@@ -103,7 +103,7 @@ Get disease details and associated targets/drugs.
 ```python
 from scripts.query_opentargets import get_disease_info
 
-disease_info = get_disease_info("EFO_0000249", include_targets=True)
+disease_info = get_disease_info("MONDO_0004975", include_targets=True)
 
 # Access fields:
 # - name: Disease name
@@ -122,13 +122,13 @@ from scripts.query_opentargets import get_target_disease_evidence
 # Get all evidence
 evidence = get_target_disease_evidence(
     ensembl_id="ENSG00000157764",
-    efo_id="EFO_0000249"
+    disease_id="MONDO_0004975"
 )
 
 # Filter by evidence type
 genetic_evidence = get_target_disease_evidence(
     ensembl_id="ENSG00000157764",
-    efo_id="EFO_0000249",
+    disease_id="MONDO_0004975",
     data_types=["genetic_association"]
 )
 
@@ -158,7 +158,7 @@ Identify drugs used for a disease and their targets.
 ```python
 from scripts.query_opentargets import get_known_drugs_for_disease
 
-drugs = get_known_drugs_for_disease("EFO_0000249")
+drugs = get_known_drugs_for_disease("MONDO_0004975")
 
 # drugs contains:
 # - uniqueDrugs: Total number of unique drugs
@@ -276,7 +276,7 @@ When prioritizing drug targets:
 ### Common Workflows
 
 **Workflow 1: Target Discovery for a Disease**
-1. Search for disease → get EFO ID
+1. Search for disease → get Mondo ID (search returns Mondo or EFO ID; prefer Mondo)
 2. Query disease info with `include_targets=True`
 3. Review top targets sorted by association score
 4. For promising targets, get detailed target info
@@ -293,7 +293,7 @@ When prioritizing drug targets:
 7. Check known drugs targeting gene for mechanism insights
 
 **Workflow 3: Drug Repurposing**
-1. Search for disease → get EFO ID
+1. Search for disease → get Mondo ID (search returns Mondo or EFO ID; prefer Mondo)
 2. Get known drugs for disease
 3. For each drug, get detailed drug info
 4. Examine mechanisms of action and targets
