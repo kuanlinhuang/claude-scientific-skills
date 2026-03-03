@@ -288,7 +288,7 @@ promoter = "CCCGCCCGCCCGCCGCCCGCAGTTAATGAGCCCAGCGTGCC"  # Example
 all_hits = []
 for m in matrices[:10]:  # Limit for demo
     pwm_data = requests.get(f"https://jaspar.elixir.no/api/v1/matrix/{m['matrix_id']}/").json()
-    pfm = pfm_data["pfm"]
+    pfm = pwm_data["pfm"]
     pfm_arr = np.array([pfm["A"], pfm["C"], pfm["G"], pfm["T"]], dtype=float) + 0.8
     ppm = pfm_arr / pfm_arr.sum(axis=0)
     pwm = np.log2(ppm / 0.25)

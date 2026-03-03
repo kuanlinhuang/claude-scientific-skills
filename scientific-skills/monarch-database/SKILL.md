@@ -80,19 +80,20 @@ def phenotype_to_gene(hpo_ids):
     Uses semantic similarity scoring.
     """
     # Use the /association endpoint for direct phenotype-gene links
+    # Genes are subjects of has_phenotype; phenotypes are objects
     all_genes = []
     for hpo_id in hpo_ids:
         data = monarch_get("association/all", {
-            "subject": hpo_id,
+            "object": hpo_id,
+            "subject_category": "biolink:Gene",
             "predicate": "biolink:has_phenotype",
-            "category": "biolink:GeneToPhenotypicFeatureAssociation",
             "limit": 50
         })
         for assoc in data.get("items", []):
             all_genes.append({
                 "phenotype_id": hpo_id,
-                "gene_id": assoc.get("object", {}).get("id"),
-                "gene_name": assoc.get("object", {}).get("name"),
+                "gene_id": assoc.get("subject", {}).get("id"),
+                "gene_name": assoc.get("subject", {}).get("name"),
                 "evidence": assoc.get("evidence_type")
             })
     return all_genes

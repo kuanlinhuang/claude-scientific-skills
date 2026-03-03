@@ -37,26 +37,20 @@ Query gene data by symbol, Ensembl ID, or external database identifiers.
 - Get gene coordinates and chromosomal locations
 - Access cross-references to external databases (UniProt, RefSeq, etc.)
 
-**Using the ensembl_rest package:**
+**Using the ensembl_query script (recommended):**
 ```python
-from ensembl_rest import EnsemblClient
+from scripts.ensembl_query import EnsemblAPIClient
 
-client = EnsemblClient()
+client = EnsemblAPIClient()
 
 # Look up gene by symbol
-gene_data = client.symbol_lookup(
-    species='human',
-    symbol='BRCA2'
-)
+gene_data = client.lookup_gene_by_symbol('human', 'BRCA2')
 
-# Get detailed gene information
-gene_info = client.lookup_id(
-    id='ENSG00000139618',  # BRCA2 Ensembl ID
-    expand=True
-)
+# Get detailed gene information by Ensembl ID
+gene_info = client.lookup_by_id('ENSG00000139618', expand=True)
 ```
 
-**Direct REST API (no package):**
+**Direct REST API (no script):**
 ```python
 import requests
 
@@ -82,17 +76,14 @@ Fetch genomic, transcript, or protein sequences in various formats (JSON, FASTA,
 
 **Example:**
 ```python
-# Using ensembl_rest package
-sequence = client.sequence_id(
-    id='ENSG00000139618',  # Gene ID
-    content_type='application/json'
-)
+from scripts.ensembl_query import EnsemblAPIClient
+client = EnsemblAPIClient()
+
+# Get gene sequence (genomic)
+sequence = client.get_sequence('ENSG00000139618', seq_type='genomic')
 
 # Get sequence for a genomic region
-region_seq = client.sequence_region(
-    species='human',
-    region='7:140424943-140624564'  # chromosome:start-end
-)
+region_seq = client.get_region_sequence('human', '7:140424943-140624564')
 ```
 
 ### 3. Variant Analysis
@@ -107,17 +98,19 @@ Query genetic variation data and predict variant consequences using the Variant 
 
 **VEP example:**
 ```python
-# Predict variant consequences
-vep_result = client.vep_hgvs(
-    species='human',
-    hgvs_notation='ENST00000380152.7:c.803C>T'
-)
+import requests
 
-# Query variant by rsID
-variant = client.variation_id(
-    species='human',
-    id='rs699'
-)
+server = "https://rest.ensembl.org"
+
+# Predict consequences for a variant by rsID (most reliable)
+r = requests.get(f"{server}/vep/human/id/rs699",
+    headers={"Content-Type": "application/json"})
+vep_result = r.json()  # list of consequence objects
+
+# Or use the EnsemblAPIClient script for variants:
+from scripts.ensembl_query import EnsemblAPIClient
+client = EnsemblAPIClient()
+variant = client.get_variant('human', 'rs699')  # allele freqs, mappings
 ```
 
 ### 4. Comparative Genomics
@@ -132,17 +125,12 @@ Perform cross-species comparisons to identify orthologs, paralogs, and evolution
 
 **Example:**
 ```python
-# Find orthologs for a human gene
-orthologs = client.homology_ensemblgene(
-    id='ENSG00000139618',  # Human BRCA2
-    target_species='mouse'
-)
+from scripts.ensembl_query import EnsemblAPIClient
+client = EnsemblAPIClient()
 
-# Get gene tree
-gene_tree = client.genetree_member_symbol(
-    species='human',
-    symbol='BRCA2'
-)
+# Find orthologs for a human gene
+orthologs = client.find_orthologs('ENSG00000139618', source_species='human', target_species='mus_musculus')
+# orthologs['data'][0]['homologies'] contains the list of orthologs
 ```
 
 ### 5. Genomic Region Analysis

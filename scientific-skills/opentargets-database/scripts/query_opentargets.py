@@ -63,7 +63,7 @@ def search_entities(query_string: str, entity_types: Optional[List[str]] = None)
     """
     query = """
       query search($queryString: String!, $entityNames: [String!]) {
-        search(queryString: $queryString, entityNames: $entityNames, page: {size: 10}) {
+        search(queryString: $queryString, entityNames: $entityNames, page: {index: 0, size: 10}) {
           hits {
             id
             entity
@@ -94,7 +94,7 @@ def get_target_info(ensembl_id: str, include_diseases: bool = False) -> Dict[str
         Dictionary with target information including tractability, safety, expression
     """
     disease_fragment = """
-      associatedDiseases(page: {size: 10}) {
+      associatedDiseases(page: {index: 0, size: 10}) {
         rows {
           disease {
             id
@@ -102,7 +102,7 @@ def get_target_info(ensembl_id: str, include_diseases: bool = False) -> Dict[str
           }
           score
           datatypeScores {
-            componentId
+            id
             score
           }
         }
@@ -128,12 +128,11 @@ def get_target_info(ensembl_id: str, include_diseases: bool = False) -> Dict[str
             event
             effects {{
               dosing
-              organsAffected
+              direction
             }}
             biosamples {{
-              tissue {{
-                label
-              }}
+              tissueLabel
+              tissueId
             }}
           }}
 
@@ -174,7 +173,7 @@ def get_disease_info(efo_id: str, include_targets: bool = False) -> Dict[str, An
           }
           score
           datatypeScores {
-            componentId
+            id
             score
           }
         }
@@ -204,22 +203,24 @@ def get_disease_info(efo_id: str, include_targets: bool = False) -> Dict[str, An
 
 
 def get_target_disease_evidence(ensembl_id: str, efo_id: str,
-                                  data_types: Optional[List[str]] = None) -> List[Dict[str, Any]]:
+                                  datasource_ids: Optional[List[str]] = None) -> List[Dict[str, Any]]:
     """
     Retrieve evidence linking a target to a disease.
 
     Args:
         ensembl_id: Ensembl gene ID
-        efo_id: EFO disease identifier
-        data_types: Optional filter for evidence types (e.g., ["genetic_association", "known_drug"])
+        efo_id: MONDO disease identifier (e.g., "MONDO_0004975")
+        datasource_ids: Optional filter by data source IDs (e.g., ["gwas_catalog", "clinvar", "chembl"])
+                        Note: to filter by evidence category (datatypeId), filter the returned rows
+                        by their 'datatypeId' field (e.g., "genetic_association", "known_drug").
 
     Returns:
         List of evidence records with scores and sources
     """
     query = """
-      query evidences($ensemblId: String!, $efoId: String!, $dataTypes: [String!]) {
+      query evidences($ensemblId: String!, $efoId: String!, $datasourceIds: [String!]) {
         disease(efoId: $efoId) {
-          evidences(ensemblIds: [$ensemblId], datatypes: $dataTypes, size: 100) {
+          evidences(ensemblIds: [$ensemblId], datasourceIds: $datasourceIds, size: 100) {
             rows {
               datasourceId
               datatypeId
@@ -235,8 +236,10 @@ def get_target_disease_evidence(ensembl_id: str, efo_id: str,
     """
 
     variables = {"ensemblId": ensembl_id, "efoId": efo_id}
-    if data_types:
-        variables["dataTypes"] = data_types
+    if datasource_ids:
+        variables["datasourceIds"] = datasource_ids
+    else:
+        variables["datasourceIds"] = None
 
     result = execute_query(query, variables)
     return result.get("disease", {}).get("evidences", {}).get("rows", [])
@@ -265,7 +268,7 @@ def get_known_drugs_for_disease(efo_id: str) -> Dict[str, Any]:
                 drugType
                 maximumClinicalTrialPhase
               }
-              targets {
+              target {
                 id
                 approvedSymbol
               }
@@ -301,23 +304,25 @@ def get_drug_info(chembl_id: str) -> Dict[str, Any]:
           drugType
           maximumClinicalTrialPhase
           hasBeenWithdrawn
-          withdrawnNotice {
-            reasons
-            countries
-          }
           mechanismsOfAction {
-            actionType
-            mechanismOfAction
-            targetName
-            targets {
-              id
-              approvedSymbol
+            rows {
+              actionType
+              mechanismOfAction
+              targetName
+              targets {
+                id
+                approvedSymbol
+              }
             }
           }
           indications {
-            disease
-            efoId
-            maxPhaseForIndication
+            rows {
+              disease {
+                id
+                name
+              }
+              maxPhaseForIndication
+            }
           }
         }
       }
@@ -341,7 +346,7 @@ def get_target_associations(ensembl_id: str, min_score: float = 0.0) -> List[Dic
     query = """
       query targetAssociations($ensemblId: String!) {
         target(ensemblId: $ensemblId) {
-          associatedDiseases(page: {size: 100}) {
+          associatedDiseases(page: {index: 0, size: 100}) {
             count
             rows {
               disease {

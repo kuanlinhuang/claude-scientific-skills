@@ -51,7 +51,8 @@ params = {
 response = requests.get(url, params=params)
 data = response.json()
 
-print(f"Found {data['totalCount']} trials")
+print(f"Found {len(data.get('studies', []))} trials on this page")
+# Note: API v2 does not return a totalCount field; paginate via 'nextPageToken'
 ```
 
 ### Retrieve Specific Trial
@@ -90,7 +91,7 @@ results = search_studies(
     sort="LastUpdatePostDate:desc"
 )
 
-print(f"Found {results['totalCount']} recruiting diabetes trials")
+print(f"Found {len(results.get('studies', []))} results on this page")
 for study in results['studies']:
     protocol = study['protocolSection']
     nct_id = protocol['identificationModule']['nctId']

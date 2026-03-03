@@ -225,6 +225,7 @@ class EnsemblAPIClient:
     def find_orthologs(
         self,
         ensembl_id: str,
+        source_species: str = "human",
         target_species: Optional[str] = None
     ) -> Dict:
         """
@@ -232,13 +233,14 @@ class EnsemblAPIClient:
 
         Args:
             ensembl_id: Source gene Ensembl ID
+            source_species: Species of the source gene (default: 'human')
             target_species: Target species (optional, returns all if not specified)
 
         Returns:
             Homology information dictionary
         """
-        endpoint = f"/homology/id/{ensembl_id}"
-        params = {}
+        endpoint = f"/homology/id/{source_species}/{ensembl_id}"
+        params = {"type": "orthologues"}
         if target_species:
             params["target_species"] = target_species
         return self._make_request(endpoint, params=params)
